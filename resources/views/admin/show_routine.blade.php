@@ -61,8 +61,9 @@
                         <td>{{ $val->day }}</td>
                         <td>{{ $val->course_code }}</td>
                         <td>
-                          <a href="{{ url('assignedTeacher',$a->unique_code) }}" class="btn btn-info btn-sm">Show</a>
-                        </td>
+                          <a href="{{ url('assignedTeacher/' . $a->unique_code . '/' . $val->date) }}" class="btn btn-info btn-sm">Show</a>
+                      </td>
+                      
                       </tr>
                       @endforeach
                     </tbody>

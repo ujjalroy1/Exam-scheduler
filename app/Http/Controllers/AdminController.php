@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\allHoliDay;
+use App\Models\assignedTeacher;
 use App\Models\CourseDetail;
 use App\Models\finduserid;
 use App\Models\resultRoutine;
 use App\Models\routineInfo;
 use App\Models\specialDate;
+use App\Models\teacher;
 use Carbon\Carbon;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -28,6 +30,11 @@ class AdminController extends Controller
     }
     public function confirm_routine(Request $request)
     {
+
+      
+     
+
+
 
      //taking course details
       $data=CourseDetail::where('level',$request->level)->where('semester',$request->semester)->where('dept',$request->dept)->get();
@@ -264,7 +271,7 @@ class AdminController extends Controller
     
     $storedata=new routineInfo();
     $storedata->unique_code=$uniqueRandomNumber;
-    $storedata->faculty="CSE";
+    $storedata->faculty="CSE";//we need to change here
     $storedata->name="B.Sc(engineering)in CSE";
     $storedata->center="Muhammad Qudrat-i-Khuda building";
     $storedata->time=$request->times;
@@ -292,6 +299,57 @@ class AdminController extends Controller
         $resdata->course_code=$anscourse[$i];
         $resdata->day=Carbon::parse($ansdate[$i])->format('l');
         $resdata->save();
+       
+               // Get all teachers grouped by rank
+       $professors = Teacher::where('rank', 'Professor')->where('faculty','CSE')->orderBy('number_of_duty')->get();
+       $associateProfessors = Teacher::where('rank', 'Associate Professor')->where('faculty','CSE')->orderBy('number_of_duty')->get();
+       $assistantProfessors = Teacher::where('rank', 'Assistant Professor')->where('faculty','CSE')->orderBy('number_of_duty')->get();
+       $lecturers = Teacher::where('rank', 'Lecturer')->where('faculty','CSE')->orderBy('number_of_duty')->get();
+       $assignTeachers=[];
+       $teqacherPerdates=6;
+               // Initialize variables
+        $assignedTeachers = [];
+        $teachersPerDate = 6;
+        $rankGroups = [$professors, $associateProfessors, $assistantProfessors, $lecturers];
+
+
+        while (count($assignedTeachers) < $teachersPerDate) {
+            foreach ($rankGroups as $group) {
+                if (count($group) > 0) {
+                    $teacher = $group->shift(); // Get the teacher with least duties
+                    $teacher_id=$teacher->id;
+                    if (assignedTeacher::where('teacher_id', $teacher_id)->where('dates', $ansdate[$i])->exists()) {
+                        continue;
+                    }
+
+
+                    $assignTec=new assignedTeacher();
+                    $assignTec->teacher_id=$teacher_id;
+                    $assignTec->unique_code=$uniqueRandomNumber;
+                    $assignTec->dates=$ansdate[$i];
+                    $assignTec->save();
+                    
+                    $updateTeacher = Teacher::where('id', $teacher_id)->first(); // Fetch the teacher record
+                    $updateTeacher->number_of_duty = $updateTeacher->number_of_duty + 1; // Increment the duty count
+                    $updateTeacher->save(); // Save the updated record
+                    
+
+
+                    $assignedTeachers[] = $teacher->id; // Add the teacher to the assigned list
+
+                    if (count($assignedTeachers) >= $teachersPerDate) {
+                        break; // Exit the loop if we have 6 teachers
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+
 
      }
     
@@ -436,10 +494,17 @@ class AdminController extends Controller
 
     }
 
-    public function assignedTeacher($id)
+    public function assignedTeacher($unique_code,$date)
     {
 
-        return view('admin.assigned_teacher');
+        $assignedtech=assignedTeacher::where('unique_code',$unique_code)->where('dates',$date)->get();
+        $teacher_name=[];
+        foreach($assignedtech as $tc)
+        {
+            $teacher_name[]=$tc->teacher->name;
+        }
+  
+        return view('admin.assigned_teacher',compact('teacher_name'));
     }
 
 

@@ -26,7 +26,7 @@ Route::get('home',[HomeController::class,'index'])->middleware(['auth', 'verifie
 
 
 
-Route::get('assignedTeacher/{id}',[AdminController::class,'assignedTeacher'])->middleware('auth','admin');
+Route::get('assignedTeacher/{unique_code}/{dates}',[AdminController::class,'assignedTeacher'])->middleware('auth','admin');
 Route::get('admin',[AdminController::class,'index'])->middleware('auth','admin');
 Route::get('create_routine',[AdminController::class,'create_routine'])->middleware('auth','admin');
 Route::post('confirm_routine',[AdminController::class,'confirm_routine'])->middleware('auth','admin');
